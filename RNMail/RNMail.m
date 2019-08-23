@@ -151,35 +151,36 @@ RCT_EXPORT_METHOD(mail:(NSDictionary *)options
 
 - (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error
 {
-    NSString *key = RCTKeyForInstance(controller);
-    RCTResponseSenderBlock callback = _callbacks[key];
-    if (callback) {
-        switch (result) {
-            case MFMailComposeResultSent:
-                callback(@[[NSNull null] , @"sent"]);
-                break;
-            case MFMailComposeResultSaved:
-                callback(@[[NSNull null] , @"saved"]);
-                break;
-            case MFMailComposeResultCancelled:
-                callback(@[[NSNull null] , @"cancelled"]);
-                break;
-            case MFMailComposeResultFailed:
-                callback(@[@"failed"]);
-                break;
-            default:
-                callback(@[@"error"]);
-                break;
-        }
-        [_callbacks removeObjectForKey:key];
-    } else {
-        RCTLogWarn(@"No callback registered for mail: %@", controller.title);
-    }
     UIViewController *ctrl = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
     while (ctrl.presentedViewController && ctrl != controller) {
         ctrl = ctrl.presentedViewController;
     }
-    [ctrl dismissViewControllerAnimated:YES completion:nil];
+    [ctrl dismissViewControllerAnimated:YES completion:^{
+        NSString *key = RCTKeyForInstance(controller);
+        RCTResponseSenderBlock callback = _callbacks[key];
+        if (callback) {
+            switch (result) {
+                case MFMailComposeResultSent:
+                    callback(@[[NSNull null] , @"sent"]);
+                    break;
+                case MFMailComposeResultSaved:
+                    callback(@[[NSNull null] , @"saved"]);
+                    break;
+                case MFMailComposeResultCancelled:
+                    callback(@[[NSNull null] , @"cancelled"]);
+                    break;
+                case MFMailComposeResultFailed:
+                    callback(@[@"failed"]);
+                    break;
+                default:
+                    callback(@[@"error"]);
+                    break;
+            }
+            [_callbacks removeObjectForKey:key];
+        } else {
+            RCTLogWarn(@"No callback registered for mail: %@", controller.title);
+        }
+    }];
 }
 
 #pragma mark Private
